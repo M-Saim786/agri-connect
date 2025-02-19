@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:agri_connect/custom.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class AgriDetectionPage extends StatefulWidget {
@@ -11,66 +14,169 @@ class AgriDetectionPage extends StatefulWidget {
 }
 
 class _AgriDetectionPageState extends State<AgriDetectionPage> {
+  File? _selectedImageFile;
+  bool _isLoading = false;
+  String _detectionResult = '';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: CustomColor.greenTextColor,
-        title: Text("Agri Detection",style:TextStyle(color: CustomColor.mintForestTextColor),),
+        title: Text("Agri Detection", 
+               style: TextStyle(color: CustomColor.mintForestTextColor)),
         actions: [
-          IconButton(onPressed: (){
-
-          },
-              icon: Icon(FontAwesomeIcons.lightbulb,color: CustomColor.mintForestTextColor,)),
-          IconButton(onPressed: (){
-            openQRScanner(context);
-          }, icon: Icon(FontAwesomeIcons.camera,color: CustomColor.mintForestTextColor,)),
+          IconButton(
+            icon: Icon(FontAwesomeIcons.lightbulb,
+                    color: CustomColor.mintForestTextColor),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: Icon(FontAwesomeIcons.camera,
+                    color: CustomColor.mintForestTextColor),
+            onPressed: () => openQRScanner(context),
+          ),
         ],
       ),
       body: Column(
-        mainAxisAlignment:MainAxisAlignment.start ,
         children: [
-          SizedBox(height: 20,),
-          Center(
-            child: Container(
-              child: Text("Place the plant in designated area",style: TextStyle(
+          SizedBox(height: 20),
+          Text("Place the plant in designated area",
+              style: TextStyle(
                   color: CustomColor.ashgrey,
                   fontSize: 20,
-                  fontWeight: FontWeight.bold
-              ),),
-            ),
-          )
+                  fontWeight: FontWeight.bold)),
+          _buildImagePreview(),
+          _buildImageControls(),
+          _buildDetectionResult(),
+          if (_isLoading) CircularProgressIndicator(),
         ],
-      )
+      ),
     );
   }
 
+  Widget _buildImagePreview() {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.5,
+      width: double.infinity,
+      margin: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: _selectedImageFile != null
+          ? Image.file(_selectedImageFile!, fit: BoxFit.cover)
+          : Center(child: Text('No image selected')),
+    );
+  }
+
+  Widget _buildImageControls() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        ElevatedButton.icon(
+          icon: Icon(Icons.camera_alt),
+          label: Text('Camera'),
+          onPressed: () => _pickImage(ImageSource.camera),
+        ),
+        ElevatedButton.icon(
+          icon: Icon(Icons.photo_library),
+          label: Text('Gallery'),
+          onPressed: () => _pickImage(ImageSource.gallery),
+        ),
+        ElevatedButton.icon(
+          icon: Icon(Icons.search),
+          label: Text('Detect'),
+          onPressed: _detectImage,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDetectionResult() {
+    return Padding(
+      padding: EdgeInsets.all(16),
+      child: Text(_detectionResult,
+          style: TextStyle(fontSize: 16, color: Colors.black)),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final pickedFile = await ImagePicker().pickImage(source: source);
+      if (pickedFile != null) {
+        setState(() {
+          _selectedImageFile = File(pickedFile.path);
+          _detectionResult = '';
+        });
+      }
+    } catch (e) {
+      _showError('Failed to pick image: ${e.toString()}');
+    }
+  }
+
+  Future<void> _detectImage() async {
+    if (_selectedImageFile == null) {
+      _showError('Please select an image first');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final uri = Uri.parse('http://localhost:8000/predict');
+      var request = http.MultipartRequest('POST', uri)
+        ..files.add(await http.MultipartFile.fromPath(
+          'image', 
+          _selectedImageFile!.path
+        ));
+
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
+
+      setState(() {
+        _detectionResult = _parseDetectionResponse(responseData);
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      _showError('Detection failed: ${e.toString()}');
+    }
+  }
+
+  String _parseDetectionResponse(String response) {
+    // Implement your response parsing logic here
+    return 'Detection Result:\n$response';
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  // Existing QR scanner code
   void openQRScanner(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) {
-        return Dialog(
-          child: SizedBox(
-            width: 300,
-            height: 400,
-            child: MobileScanner(
-              onDetect: (BarcodeCapture capture) {
-                final List<Barcode> barcodes = capture.barcodes;
-
-                if (barcodes.isNotEmpty) {
-                  final String? code = barcodes.first.rawValue;
-                  Navigator.pop(context); // Close the scanner dialog
-                  if (code != null) {
-                    print('Scanned Code: $code'); // Handle the scanned QR code
-                  } else {
-                    print('Failed to retrieve the QR code value.');
-                  }
+      builder: (context) => Dialog(
+        child: SizedBox(
+          width: 300,
+          height: 400,
+          child: MobileScanner(
+            onDetect: (BarcodeCapture capture) {
+              final barcodes = capture.barcodes;
+              if (barcodes.isNotEmpty) {
+                final code = barcodes.first.rawValue;
+                Navigator.pop(context);
+                if (code != null) {
+                  print('Scanned Code: $code');
                 }
-              },
-            ),
+              }
+            },
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

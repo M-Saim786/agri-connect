@@ -304,17 +304,18 @@ class ProductList extends StatelessWidget {
         final product = products[index];
         return InkWell(
           onTap: () {
+            print("product ${product.toString()}");
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ProductDetailPage(
                   product: Product(
-                    name: product['name'],
-                    price: product['price'].toDouble(),
-                    description: product['description'],
-                    image: product['image'],
-                    stock: product['stock'],
-                    id: product['_id'],
+                    name: product['name'] ?? "no name",
+                    price: product['price'].toDouble() ?? "no name",
+                    description: product['description'] ?? "no name",
+                    image: product['image'] ?? "no name",
+                    stock: product['stock'] ?? "no name",
+                    id: product['id'] ?? "no name",
                   ),
                 ),
               ),
@@ -368,23 +369,34 @@ class ProductList extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                // Create a Product instance instead of a Map
-                                final productItem = Product(
-                                  name: product['name'],
-                                  price: product['price'].toDouble(),
-                                  description: product['description'],
-                                  image: product['image'],
-                                  stock: product['stock'],
-                                  id: product['_id'],
+                            Consumer<ProductCartProvider>(
+                              builder: (context, cartProvider, child) {
+                                bool isInCart = cartProvider.items
+                                    .any((item) => item.id == product['id']);
+
+                                return ElevatedButton(
+                                  onPressed: () {
+                                    final productItem = Product(
+                                      id: product['id'],
+                                      name: product['name'],
+                                      price: product['price'].toDouble(),
+                                      description: product['description'],
+                                      image: product['image'],
+                                      stock: product['stock'],
+                                    );
+
+                                    if (isInCart) {
+                                      cartProvider.remove(productItem);
+                                    } else {
+                                      cartProvider.add(productItem);
+                                    }
+                                  },
+                                  child: Text(isInCart
+                                      ? 'Remove from Cart'
+                                      : 'Add to Cart'),
                                 );
-                                // cartProvider.addProductToCart(productItem);
                               },
-                              child: Text("Add to Cart"),
-                              // style: ElevatedButton.styleFrom(
-                              //     primary: CustomColor.greenTextColor),
-                            )
+                            ),
                           ],
                         )
                       ],
@@ -416,4 +428,13 @@ class Product {
     required this.stock,
     required this.id,
   });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Product && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }
