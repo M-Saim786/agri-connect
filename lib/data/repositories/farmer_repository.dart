@@ -55,8 +55,9 @@ class FarmerRepository {
   Future getFarmerDetail(id) async {
     try {
       final response =
-          await _apiService.get("/farmer/getProfile/${id}", token: token);
-      // print(response.body.toString());
+          await _apiService.get("/farmer/getProfile/677d3a09627bf6665ae1c901", token: token);
+          // await _apiService.get("/farmer/getProfile/${id}", token: token);
+      print("token: ${token}");
       print(response.statusCode);
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);

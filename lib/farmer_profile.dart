@@ -22,12 +22,13 @@ class _FarmerProfileState extends State<FarmerProfile> {
   }
 
   getDetails() async {
-    isLoading= true;
+    isLoading = true;
+    var userId = await prefs?.getString("userId");
     details = await farmerController.getFarmersDetails(userId);
     print("details: $details");
     print("details: ${details['user']['name']}");
     setState(() {
-      isLoading= false;
+      isLoading = false;
     });
   }
 
@@ -90,6 +91,9 @@ class _FarmerProfileState extends State<FarmerProfile> {
 
                         // Name
                         buildProfileDetail("Name", details['user']['name']),
+                        const SizedBox(height: 10),
+                        buildProfileDetail(
+                            "Description", "${details['description']}"),
                         const SizedBox(height: 10),
 
                         // Email
