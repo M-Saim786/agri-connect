@@ -73,3 +73,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+// IN 2025 if dont know what are differnce between RAG and Agentic RAG. You're something great missing out. I am saim malik AI researcher and Learner. I just posted what are the differnces between RAG and agentic RAG. Highlighted key differnces and misconceptions. Check out my post. 

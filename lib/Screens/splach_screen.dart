@@ -42,57 +42,43 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 100),
-            child: Image.asset(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
               'images/logo2.jpg',
             ),
-          ),
 
-          // Overlay with text and spinner
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Spacer to push the title down a bit
-              //Spacer(flex: 1),
-              SizedBox(
-                height: 340,
-              ),
-              // Title text centered at the top
+            SizedBox(height: 30), // Space between Logo and Title
 
-              Text(
-                'AGRI-CONNECT',
-                style: GoogleFonts.anton(
-                  color: CustomColor.greenTextColor,
-                  fontSize: 40,
-                  letterSpacing: 2.5,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 10.0,
-                      color: Colors.black54,
-                      offset: Offset(2, 2),
-                    ),
-                  ],
-                ),
-                textAlign: TextAlign.center,
-              ),
-
-              // Spacer to control the distance between the title and spinner
-              //Spacer(flex: 1),
-              SizedBox(
-                height: 220,
-              ),
-              // Loading spinner in the center
-              SpinKitChasingDots(
+            // Title Text
+            Text(
+              'AGRI-CONNECT',
+              style: GoogleFonts.anton(
                 color: CustomColor.greenTextColor,
-                size: 50,
+                fontSize: 40,
+                letterSpacing: 2.5,
+                shadows: [
+                  Shadow(
+                    blurRadius: 10.0,
+                    color: Colors.black54,
+                    offset: Offset(2, 2),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ],
+              textAlign: TextAlign.center,
+            ),
+            // Overlay with text and spinner
+            SizedBox(height: 50), // Space between Title and Spinner
+
+            // Loading Spinner
+            SpinKitChasingDots(
+              color: CustomColor.greenTextColor,
+              size: 50,
+            ),
+          ],
+        ),
       ),
     );
   }
